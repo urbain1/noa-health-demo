@@ -2,15 +2,43 @@
 @config "../tailwind.config.js";
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #213547;
-  background-color: #ffffff;
+  color: #1a1a2e;
+  background-color: #f8f9fb;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --noa-primary: #2563eb;
+  --noa-primary-dark: #1d4ed8;
+  --noa-primary-light: #eff6ff;
+  --noa-accent: #0ea5e9;
+  --noa-surface: #ffffff;
+  --noa-surface-secondary: #f8fafc;
+  --noa-border: #e2e8f0;
+  --noa-text-primary: #0f172a;
+  --noa-text-secondary: #64748b;
+  --noa-danger: #ef4444;
+  --noa-warning: #f59e0b;
+  --noa-success: #10b981;
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
 body {

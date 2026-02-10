@@ -1,14 +1,14 @@
-export default function Alert({ task, onDismiss, onFollowUp }) {
+export default function Alert({ task, onDismiss, onRepage, onEscalate, currentIndex, totalCount }) {
   return (
     <div className="animate-slide-down fixed top-14 right-0 left-0 z-20 mx-auto max-w-2xl px-4 pt-2 sm:px-6">
-      <div className="rounded-xl bg-red-600 p-4 shadow-2xl">
+      <div className="bg-white border-l-4 border-red-500 shadow-lg rounded-lg p-4">
         {/* Heading row */}
         <div className="mb-2 flex items-center gap-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="currentColor"
-            className="h-6 w-6 shrink-0 text-white"
+            className="h-6 w-6 shrink-0 text-red-500"
           >
             <path
               fillRule="evenodd"
@@ -16,33 +16,42 @@ export default function Alert({ task, onDismiss, onFollowUp }) {
               clipRule="evenodd"
             />
           </svg>
-          <h2 className="text-lg font-bold text-white">Task Delayed</h2>
+          <h2 className="text-lg font-bold text-gray-900">Task Delayed</h2>
         </div>
+        {totalCount > 1 && (
+          <p className="mb-1 text-sm text-gray-500">{currentIndex + 1} of {totalCount} delayed tasks</p>
+        )}
 
         {/* Details */}
-        <p className="mb-1 text-sm font-medium text-white">
+        <p className="text-sm font-semibold text-gray-900">
           {task.description}
         </p>
-        <p className="mb-4 text-sm text-red-200">
+        <p className="mb-4 text-sm text-gray-500">
           {task.department}
           {task.room ? ` \u00B7 Room ${task.room}` : ""}
         </p>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <button
-            onClick={onFollowUp}
-            className="flex-1 rounded-lg border-none bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition-all duration-150 hover:bg-red-50 active:scale-[0.97]"
+            onClick={() => onRepage(task)}
+            className="flex-1 rounded-lg border-2 border-orange-400 bg-white px-3 py-2 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50 active:scale-[0.97]"
           >
-            Follow Up
+            Repage Dept
           </button>
           <button
-            onClick={onDismiss}
-            className="flex-1 rounded-lg border border-red-400 bg-red-700 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-150 hover:bg-red-800 active:scale-[0.97]"
+            onClick={() => onEscalate(task)}
+            className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 active:scale-[0.97]"
           >
-            Dismiss
+            Escalate
           </button>
         </div>
+        <button
+          onClick={onDismiss}
+          className="mt-1 w-full text-center text-xs text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          Dismiss
+        </button>
       </div>
     </div>
   );

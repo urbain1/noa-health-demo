@@ -1,19 +1,36 @@
 import PatientCard from "./PatientCard";
 
-export default function Dashboard({ patients, onVoiceClick, dismissedCount, onClearDismissed, onDischargeClick, onDeleteTask, onEditTask }) {
+export default function Dashboard({ patients, onVoiceClick, dismissedCount, onClearDismissed, onDischargeClick, onDeleteTask, onEditTask, onGenerateHandoff, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading, onSwitchToChargeView }) {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-blue-600 px-4 py-4 shadow-md">
-        <div className="w-20" />
-        <h1 className="text-xl font-bold text-white sm:text-2xl">
-          Noa Health
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
+        <div className="flex gap-2">
+          <button
+            onClick={onGenerateHandoff}
+            disabled={handoffLoading}
+            className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {handoffLoading ? "Generating..." : "Handoff"}
+          </button>
+          <button
+            onClick={onSwitchToChargeView}
+            className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 active:scale-[0.97]"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+            </svg>
+            Unit View
+          </button>
+        </div>
+        <h1 className="font-display text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
+          <span className="text-blue-600">noa</span> health
         </h1>
-        <div className="flex w-20 justify-end">
+        <div className="flex w-28 justify-end">
           {dismissedCount > 0 && (
             <button
               onClick={onClearDismissed}
-              className="rounded-lg border-none bg-blue-700 px-2.5 py-1 text-xs font-medium text-blue-100 transition-colors duration-150 hover:bg-blue-800 active:bg-blue-900"
+              className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors duration-150 hover:bg-gray-100"
             >
               Clear ({dismissedCount})
             </button>
@@ -31,6 +48,14 @@ export default function Dashboard({ patients, onVoiceClick, dismissedCount, onCl
             onDischargeClick={onDischargeClick}
             onDeleteTask={onDeleteTask}
             onEditTask={onEditTask}
+            onPatientHandoff={onPatientHandoff}
+            handoffLoading={handoffLoading}
+            onAddNote={onAddNote}
+            onEditNote={onEditNote}
+            onDeleteNote={onDeleteNote}
+            onGeneratePatientUpdate={onGeneratePatientUpdate}
+            onShowContacts={onShowContacts}
+            patientUpdateLoading={patientUpdateLoading}
           />
         ))}
       </main>
@@ -38,7 +63,7 @@ export default function Dashboard({ patients, onVoiceClick, dismissedCount, onCl
       {/* Floating mic button */}
       <button
         onClick={onVoiceClick}
-        className="fixed bottom-6 right-6 flex h-16 w-16 items-center justify-center rounded-full border-none bg-red-500 text-white shadow-xl transition-all duration-200 hover:scale-110 hover:bg-red-600 hover:shadow-2xl active:scale-95"
+        className="fixed bottom-6 right-6 flex h-16 w-16 items-center justify-center rounded-full border-none bg-blue-600 text-white shadow-lg ring-4 ring-blue-600/20 transition-all duration-200 hover:scale-105 hover:bg-blue-700 hover:shadow-xl hover:ring-blue-700/20 active:scale-95"
         aria-label="Voice input"
       >
         <svg

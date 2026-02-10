@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import Anthropic from "@anthropic-ai/sdk";
+import { parseVoiceToTask } from "../utils/claudeAPI";
 import { findMatchingPatients } from "../utils/roomMatcher";
 import RoomDisambiguationDialog from "./RoomDisambiguationDialog";
 import ManualRoomEntry from "./ManualRoomEntry";
@@ -29,62 +29,45 @@ function parseTranscriptFallback(text) {
     department = "Transport";
   }
 
-  const priority = /\b(stat|urgent)\b/.test(lower) ? "Stat" : "Routine";
+  const priority = /\b(stat|emergency|asap|immediately)\b/.test(lower)
+    ? "Stat"
+    : /\b(urgent|priority|soon|important)\b/.test(lower)
+      ? "Urgent"
+      : "Routine";
+
+  // Deadline extraction (basic patterns)
+  let deadline = null;
+  const inHoursMatch = lower.match(/\bin\s+(\d+)\s+hours?\b/);
+  const inMinutesMatch = lower.match(/\bin\s+(\d+)\s+minutes?\b/);
+  const byTomorrowMatch = lower.match(/\bby\s+tomorrow\b/);
+  const byTonightMatch = lower.match(/\bby\s+tonight\b/);
+
+  if (inHoursMatch) {
+    deadline = new Date(Date.now() + parseInt(inHoursMatch[1]) * 60 * 60 * 1000).toISOString();
+  } else if (inMinutesMatch) {
+    deadline = new Date(Date.now() + parseInt(inMinutesMatch[1]) * 60 * 1000).toISOString();
+  } else if (byTomorrowMatch) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(17, 0, 0, 0);
+    deadline = tomorrow.toISOString();
+  } else if (byTonightMatch) {
+    const tonight = new Date();
+    tonight.setHours(21, 0, 0, 0);
+    deadline = tonight.toISOString();
+  }
 
   return {
     id: Date.now(),
     description: text.trim(),
     department,
     status: "Pending",
-    createdAt: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
     priority,
+    deadline,
     room,
     ...(isDischarge && { isDischarge: true }),
     ...(needsPlacement && { needsPlacement: true }),
-  };
-}
-
-async function parseTranscript(text) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-  console.log("[VoiceCapture] VITE_ANTHROPIC_API_KEY loaded:", apiKey ? `yes (${apiKey.slice(0, 8)}...)` : "NO - key is missing");
-
-  const client = new Anthropic({
-    apiKey,
-    dangerouslyAllowBrowser: true,
-  });
-
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-5-20250929",
-    max_tokens: 256,
-    system:
-      "You are a medical documentation AI helping nurses create professional task entries.",
-    messages: [
-      {
-        role: "user",
-        content: `You are a medical documentation AI helping nurses create professional task entries.\n\nTranscript from voice recording: "${text}"\n\nParse this into a structured task. Clean up any speech recognition errors and create a PROFESSIONAL medical task description.\n\nGuidelines:\n- description: Should be detailed and professional (e.g., "Chest X-ray PA and lateral" not just "chest x-ray")\n- Include the ordering provider if mentioned (e.g., "ordered by Dr. Chen")\n- Use proper medical terminology\n- Be specific about the procedure/task\n- room: Extract room number (or "000" if not mentioned)\n- department: Choose from: Radiology, Lab, Pharmacy, Transport, Social Work, Other (use "Social Work" for discharge or nursing home/SNF placement requests)\n- priority: "Stat" (urgent) or "Routine"\n\nCommon medical abbreviations - expand these when they appear:\n- PA = posteroanterior\n- Lat = lateral\n- CBC = complete blood count\n- BMP = basic metabolic panel\n- CMP = comprehensive metabolic panel\n- CT = computed tomography\n- MRI = magnetic resonance imaging\n- CXR = chest X-ray\n- ABG = arterial blood gas\n- EKG/ECG = electrocardiogram\n- IV = intravenous\n- IM = intramuscular\n- subQ/SC = subcutaneous\n- Stat = immediately/urgently\n- PRN = as needed\n- BID = twice daily\n- TID = three times daily\n- QID = four times daily\n\nWhen you see abbreviations, expand them in the description for clarity.\n\nExamples of GOOD descriptions:\n- "Chest X-ray PA and lateral ordered by Dr. Chen"\n- "MRI brain with and without contrast"\n- "CBC with differential and metabolic panel"\n- "Lantus 10 units subcutaneous before meals"\n\nReturn ONLY raw JSON (no markdown, no backticks):\n{"room": "312", "description": "Chest X-ray PA and lateral ordered by Dr. Chen", "department": "Radiology", "priority": "Stat"}\n\nFor discharge or nursing home/SNF requests, also include:\n- "isDischarge": true if transcript mentions discharge or ready for discharge\n- "needsPlacement": true if transcript mentions nursing home, SNF, or skilled nursing facility\nExample: {"room": "312", "description": "Patient ready for discharge, requires SNF placement", "department": "Social Work", "priority": "Routine", "isDischarge": true, "needsPlacement": true}`,
-      },
-    ],
-  });
-
-  const content = message.content[0].text;
-  const cleanedContent = content
-    .replace(/^```json\s*\n?/i, '')
-    .replace(/^```\s*\n?/i, '')
-    .replace(/\n?```\s*$/i, '')
-    .trim();
-
-  const parsed = JSON.parse(cleanedContent);
-
-  return {
-    id: Date.now(),
-    room: parsed.room || "000",
-    description: parsed.description || text.trim(),
-    department: parsed.department || "Other",
-    priority: parsed.priority || "Routine",
-    status: "Pending",
-    createdAt: new Date().toISOString(),
-    ...(parsed.isDischarge && { isDischarge: true }),
-    ...(parsed.needsPlacement && { needsPlacement: true }),
   };
 }
 
@@ -168,8 +151,13 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
     try {
       let parsedTask;
       try {
-        parsedTask = await parseTranscript(transcript.trim());
-        console.log("[VoiceCapture] Claude API succeeded:", parsedTask);
+        parsedTask = await parseVoiceToTask(transcript.trim());
+        if (parsedTask) {
+          console.log("[VoiceCapture] Claude API succeeded:", parsedTask);
+        } else {
+          console.warn("[VoiceCapture] Claude API returned null, falling back");
+          parsedTask = parseTranscriptFallback(transcript.trim());
+        }
       } catch (err) {
         console.error("[VoiceCapture] Claude API failed, falling back:", err);
         parsedTask = parseTranscriptFallback(transcript.trim());
@@ -294,10 +282,10 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
   return (
     <div className="flex min-h-screen flex-col bg-gray-100">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center bg-blue-600 px-4 py-4 shadow-md">
+      <header className="sticky top-0 z-10 flex items-center border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <button
           onClick={onClose}
-          className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg border-none bg-transparent text-white transition-colors duration-150 hover:bg-blue-700 active:bg-blue-800"
+          className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-900"
           aria-label="Go back"
         >
           <svg
@@ -309,7 +297,7 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
             <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
           </svg>
         </button>
-        <h1 className="text-xl font-bold text-white">Voice Capture</h1>
+        <h1 className="font-display text-xl font-bold tracking-tight text-gray-900">Voice Capture</h1>
       </header>
 
       {/* Content */}
@@ -318,7 +306,7 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
         <div className="flex flex-col items-center gap-3 pt-8">
           <button
             onClick={toggleRecording}
-            className={`flex h-32 w-32 items-center justify-center rounded-full border-none bg-red-500 text-white shadow-xl transition-all duration-200 hover:bg-red-600 hover:shadow-2xl active:scale-95 ${
+            className={`flex h-28 w-28 items-center justify-center rounded-full border-none bg-blue-600 text-white shadow-lg ring-4 ring-blue-600/20 transition-all duration-200 hover:bg-blue-700 active:scale-95 ${
               isRecording ? "animate-pulse" : ""
             }`}
             aria-label={isRecording ? "Stop recording" : "Start recording"}
