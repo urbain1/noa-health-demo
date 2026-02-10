@@ -1,4 +1,40 @@
-import Anthropic from "@anthropic-ai/sdk";
+/**
+ * Call Claude API. Uses direct API call with VITE key locally,
+ * falls back to /api/claude serverless proxy on Vercel.
+ */
+async function callClaude({ model, max_tokens, system, messages }) {
+  const body = JSON.stringify({ model, max_tokens, system, messages });
+  const viteKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+
+  if (viteKey) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": viteKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err.error && err.error.message) || "API failed: " + res.status);
+    }
+    return res.json();
+  }
+
+  const res = await fetch("/api/claude", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err.error && err.error.message) || "API failed: " + res.status);
+  }
+  return res.json();
+}
 
 /**
  * Parse a voice transcript into a structured hospital task.
@@ -13,10 +49,7 @@ import Anthropic from "@anthropic-ai/sdk";
  */
 export async function parseVoiceToTask(transcript) {
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 1024,
       system: `You are a medical task parser for a hospital nursing coordination app. Convert nurse voice transcripts into structured tasks using proper medical terminology and abbreviations.
@@ -60,23 +93,16 @@ DEPARTMENT MAPPING (assign based on keywords):
 Current date/time for reference: ${new Date().toISOString()}
 
 DEADLINE EXTRACTION:
-- Look for time expressions indicating when a task should be completed
-- Patterns to recognize:
-  "by tomorrow" → next day at 17:00 (5pm, end of business)
-  "by tomorrow morning" → next day at 08:00
-  "by tomorrow night" → next day at 21:00
-  "by tonight" → today at 21:00
-  "by end of shift" → today at 19:00
-  "in X hours" → current time + X hours
-  "in X minutes" → current time + X minutes
-  "by [weekday]" → next occurrence of that weekday at 17:00
-  "by [weekday] [time]" → next occurrence of that weekday at specified time
-  "before [time]" → today at specified time (or tomorrow if time already passed)
-  "before surgery at [time]" → specified time
-  "ASAP" or "now" → do not set deadline, this is a priority indicator not a deadline
-- Return as ISO 8601 string in the "deadline" field
-- If no deadline is mentioned, return "deadline": null
-- Use the current date/time as reference: ${new Date().toISOString()}
+- Look for time references: "due tomorrow", "by 2pm", "in 4 hours", "due in four days", "by end of shift", "within 2 hours", "due tonight"
+- Convert spoken numbers to digits: "four" → 4, "two" → 2
+- Convert to an ISO 8601 datetime string relative to now
+- "due tomorrow" → tomorrow at 9:00 AM
+- "by 2pm" → today at 14:00
+- "in 4 hours" → 4 hours from now
+- "due in four days" → 4 days from now at 9:00 AM
+- "by end of shift" → today at 19:00
+- "due tonight" → today at 21:00
+- If no deadline mentioned, return: "deadline": null
 
 ROOM NUMBER EXTRACTION:
 - Look for patterns: 'room 208', 'bed 3', 'patient in 2A-208'
@@ -98,11 +124,11 @@ OUTPUT FORMAT (JSON only, no other text):
 {
   "description": "Full medical description with proper terminology",
   "department": "Department name",
-  "priority": "Stat", "Urgent", or "Routine",
+  "priority": "Stat" or "Routine",
   "room": "Room number or null",
   "patientName": "Patient name or null",
-  "status": "Pending",
-  "deadline": "ISO 8601 datetime string or null"
+  "deadline": "ISO 8601 datetime string or null",
+  "status": "Pending"
 }
 
 EXAMPLES:
@@ -134,11 +160,20 @@ Output: {"description": "Physical Therapy evaluation", "department": "Physical T
 Input: 'Mrs. Williams needs discharge planning'
 Output: {"description": "Discharge planning", "department": "Social Work", "priority": "Routine", "room": null, "patientName": "Mrs. Williams", "status": "Pending"}
 
-Input: 'Order CBC for room 312 by tomorrow 2pm'
-Output: {"description": "Complete Blood Count with differential", "department": "Lab", "priority": "Routine", "room": "312", "patientName": null, "status": "Pending", "deadline": "${new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]}T14:00:00.000Z"}
+Input: 'Order CBC for Sarah Johnson due tomorrow'
+Output: {"description": "Complete Blood Count with differential", "department": "Lab", "priority": "Routine", "room": null, "patientName": "Sarah Johnson", "deadline": "${new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]}T09:00:00.000Z", "status": "Pending"}
 
-Input: 'CT abdomen for Sarah Johnson in 4 hours'
-Output: {"description": "CT scan abdomen", "department": "Radiology", "priority": "Routine", "room": null, "patientName": "Sarah Johnson", "status": "Pending", "deadline": "${new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString()}"}
+Input: 'Stat MRI brain for room 208 by 2pm'
+Output: {"description": "MRI brain with and without contrast", "department": "Radiology", "priority": "Stat", "room": "208", "patientName": null, "deadline": "${new Date().toISOString().split("T")[0]}T14:00:00.000Z", "status": "Pending"}
+
+Input: 'PT eval for Martinez in four days'
+Output: {"description": "Physical Therapy evaluation", "department": "Physical Therapy", "priority": "Routine", "room": null, "patientName": "Martinez", "deadline": "${new Date(new Date().setDate(new Date().getDate() + 4)).toISOString().split("T")[0]}T09:00:00.000Z", "status": "Pending"}
+
+Input: 'CBC for Sarah Johnson due tomorrow'
+Output: {"description": "Complete Blood Count with differential", "department": "Lab", "priority": "Routine", "room": null, "patientName": "Sarah Johnson", "deadline": "${new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split("T")[0]}T09:00:00.000Z", "status": "Pending"}
+
+Input: 'Stat MRI brain for Chen due in four days'
+Output: {"description": "MRI brain with and without contrast", "department": "Radiology", "priority": "Stat", "room": null, "patientName": "Chen", "deadline": "${new Date(new Date().setDate(new Date().getDate() + 4)).toISOString().split("T")[0]}T09:00:00.000Z", "status": "Pending"}
 
 Always use complete medical terminology in descriptions, never abbreviations.`,
       messages: [
@@ -167,7 +202,7 @@ Always use complete medical terminology in descriptions, never abbreviations.`,
       patientName: parsed.patientName || null,
       status: parsed.status || "Pending",
       deadline: parsed.deadline || null,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
   } catch (err) {
     console.error("[claudeAPI] parseVoiceToTask failed:", err);
@@ -188,10 +223,7 @@ Always use complete medical terminology in descriptions, never abbreviations.`,
  */
 export async function parseTaskEditCommand(command, currentTask) {
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 512,
       system: `Current date/time: ${new Date().toISOString()}
@@ -295,9 +327,6 @@ Output: {"deadline": null}`,
  */
 export async function generateHandoffSummary(patients) {
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
     const patientSummaries = patients.map((p) => {
       const daysSinceAdmission = p.admissionDate
         ? Math.max(1, Math.round((Date.now() - new Date(p.admissionDate).getTime()) / (24 * 60 * 60 * 1000)))
@@ -340,7 +369,7 @@ export async function generateHandoffSummary(patients) {
       };
     });
 
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 4096,
       system: `You are a clinical documentation AI generating nurse shift handoff summaries using the SBAR framework. Write concise, professional clinical language that a receiving nurse can quickly scan during bedside handoff.
@@ -387,10 +416,7 @@ R (Recommendation): Prioritized action items for the incoming nurse. Start with 
  */
 export async function parseNoteInput(noteText) {
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 512,
       system: `You are a clinical documentation AI for a nursing coordination app. You receive free-form clinical notes from nurses and do two things:
@@ -453,10 +479,7 @@ OUTPUT FORMAT (JSON only, no other text):
  */
 export async function parseNoteEditCommand(command, currentNote) {
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 512,
       system: `You are a clinical note editor for a nursing coordination app. Parse natural language editing commands and return ONLY the fields that should change.
@@ -536,9 +559,6 @@ Output: {"action": "delete"}`,
  */
 export async function generateSuggestions(patient, newItem) {
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
     const daysSinceAdmission = patient.admissionDate
       ? Math.max(1, Math.round((Date.now() - new Date(patient.admissionDate).getTime()) / (24 * 60 * 60 * 1000)))
       : "unknown";
@@ -582,7 +602,7 @@ export async function generateSuggestions(patient, newItem) {
       };
     }
 
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 1024,
       system: `You are a clinical decision support AI for a nursing coordination app. Based on a patient's clinical context and a newly created task or note, suggest 0 to 3 follow-up actions that a nurse should consider.
@@ -691,9 +711,6 @@ Return [] (empty array) if no suggestions are warranted.`,
  */
 export async function generatePatientUpdate(patient, language = "English") {
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
     const daysSinceAdmission = patient.admissionDate
       ? Math.max(1, Math.round((Date.now() - new Date(patient.admissionDate).getTime()) / (24 * 60 * 60 * 1000)))
       : "unknown";
@@ -719,7 +736,7 @@ export async function generatePatientUpdate(patient, language = "English") {
       clinicalNotes: notes,
     };
 
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 2048,
       system: `You are a patient communication AI for a hospital. You generate clear, compassionate health updates for patients and their families.
@@ -801,10 +818,7 @@ export async function translateText(text, targetLanguage) {
   if (targetLanguage === "English") return text;
 
   try {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
-    const message = await client.messages.create({
+    const message = await callClaude({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 2048,
       system: `You are a medical document translator. Translate the provided text to ${targetLanguage}.

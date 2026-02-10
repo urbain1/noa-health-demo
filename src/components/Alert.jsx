@@ -27,8 +27,7 @@ export default function Alert({ task, onDismiss, onRepage, onEscalate, currentIn
           {task.description}
         </p>
         <p className="mb-4 text-sm text-gray-500">
-          {task.department}
-          {task.room ? ` \u00B7 Room ${task.room}` : ""}
+          {task.patientName && <>{task.patientName} &middot; </>}{task.department} &middot; Room {task.patientRoom || task.room}
         </p>
 
         {/* Actions */}

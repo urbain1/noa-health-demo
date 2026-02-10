@@ -74,7 +74,85 @@ function extractNameAndRoom(input) {
 }
 
 /**
- * Match a search name against a patient's name.
+ * Calculate simple similarity between two strings (0 to 1).
+ * Uses a combination of includes-check and character-level comparison.
+ */
+function nameSimilarity(a, b) {
+  const al = a.toLowerCase().trim();
+  const bl = b.toLowerCase().trim();
+
+  // Exact match
+  if (al === bl) return 1.0;
+
+  // One contains the other (e.g., "johnson" matches "jennifer johnson")
+  if (al.includes(bl) || bl.includes(al)) return 0.9;
+
+  // Check if any individual word matches exactly
+  const aWords = al.split(/\s+/);
+  const bWords = bl.split(/\s+/);
+  const hasExactWordMatch = aWords.some((aw) => bWords.some((bw) => aw === bw));
+  if (hasExactWordMatch) return 0.85;
+
+  // Check if any individual word is very similar (handles "maria" vs "mariah", "sara" vs "sarah")
+  const hasSimilarWord = aWords.some((aw) =>
+    bWords.some((bw) => {
+      // One is a prefix of the other (at least 3 chars)
+      if (aw.length >= 3 && bw.length >= 3) {
+        if (aw.startsWith(bw) || bw.startsWith(aw)) return true;
+      }
+      // Levenshtein distance of 1 or 2 for words of similar length
+      const dist = levenshtein(aw, bw);
+      const maxLen = Math.max(aw.length, bw.length);
+      if (maxLen <= 4 && dist <= 1) return true;
+      if (maxLen > 4 && dist <= 2) return true;
+      return false;
+    })
+  );
+  if (hasSimilarWord) return 0.7;
+
+  return 0;
+}
+
+/**
+ * Simple Levenshtein distance between two strings.
+ */
+function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] =
+        a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+/**
+ * Check if two name words are fuzzy-equal.
+ * Handles speech-to-text variations like "Maria"/"Mariah", "Sara"/"Sarah".
+ */
+function fuzzyWordMatch(a, b) {
+  if (a === b) return true;
+  // One is a prefix of the other (min 3 chars)
+  if (a.length >= 3 && b.length >= 3) {
+    if (a.startsWith(b) || b.startsWith(a)) return true;
+  }
+  // Levenshtein distance tolerance
+  const dist = levenshtein(a, b);
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen <= 4 && dist <= 1) return true;
+  if (maxLen > 4 && dist <= 2) return true;
+  return false;
+}
+
+/**
+ * Match a search name against a patient's name using fuzzy matching.
  *
  * @param {string} searchName - The name to search for
  * @param {{name: string}} patient - Patient object with a name field
@@ -88,21 +166,47 @@ function matchByName(searchName, patient) {
   if (patientName === normalized) return "exact";
 
   // Split into parts
-  const searchParts = normalized.split(" ");
-  const nameParts = patientName.split(" ");
+  const searchParts = normalized.split(/\s+/);
+  const nameParts = patientName.split(/\s+/);
 
-  // Last name match
+  // Single word search (e.g., "Santos", "Mariah")
   if (searchParts.length === 1) {
+    // Exact word match
     if (nameParts.some((part) => part === normalized)) return "partial";
+    // Fuzzy word match
+    if (nameParts.some((part) => fuzzyWordMatch(part, normalized))) return "partial";
   }
 
-  // First + Last match
+  // Multi-word search (e.g., "Mariah Santos", "Sarah Johnson")
   if (searchParts.length >= 2) {
     const firstName = searchParts[0];
     const lastName = searchParts[searchParts.length - 1];
+    const patientFirst = nameParts[0];
+    const patientLast = nameParts[nameParts.length - 1];
+
+    // Both first and last match exactly
     if (nameParts.includes(firstName) && nameParts.includes(lastName)) {
       return "exact";
     }
+
+    // Both first and last match fuzzily
+    if (fuzzyWordMatch(firstName, patientFirst) && fuzzyWordMatch(lastName, patientLast)) {
+      return "exact";
+    }
+
+    // One matches exactly, other matches fuzzily
+    if (
+      (firstName === patientFirst && fuzzyWordMatch(lastName, patientLast)) ||
+      (fuzzyWordMatch(firstName, patientFirst) && lastName === patientLast)
+    ) {
+      return "exact";
+    }
+
+    // At least one word matches fuzzily
+    const anyFuzzyMatch = searchParts.some((sp) =>
+      nameParts.some((np) => fuzzyWordMatch(sp, np))
+    );
+    if (anyFuzzyMatch) return "partial";
   }
 
   // Contains match

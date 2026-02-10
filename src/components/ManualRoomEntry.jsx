@@ -1,13 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function ManualRoomEntry({ defaultRoom = "", onConfirm, onCancel }) {
+export default function ManualRoomEntry({ defaultRoom = "", onConfirm, onCancel, allPatients }) {
   const [room, setRoom] = useState(defaultRoom);
   const [searchName, setSearchName] = useState("");
   const [isNewPatient, setIsNewPatient] = useState(false);
   const [patientName, setPatientName] = useState("");
   const [patientAge, setPatientAge] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredPatients, setFilteredPatients] = useState([]);
 
   const isValid = (searchName.trim() !== "" || room.trim() !== "") && (!isNewPatient || (patientName.trim() !== "" && patientAge !== ""));
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setShowSuggestions(false);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  function filterPatients(value) {
+    if (value.trim().length > 0) {
+      const query = value.toLowerCase().trim();
+      const matches = (allPatients || []).filter((p) => {
+        const nameMatch = p.name.toLowerCase().includes(query);
+        const roomMatch = p.room.toLowerCase().includes(query);
+        return nameMatch || roomMatch;
+      });
+      setFilteredPatients(matches);
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setShowSuggestions(false);
+      setFilteredPatients([]);
+    }
+  }
+
+  function handleSearchNameChange(value) {
+    setSearchName(value);
+    filterPatients(value);
+  }
+
+  function handleRoomChange(value) {
+    setRoom(value);
+    filterPatients(value);
+  }
+
+  function handleSelectPatient(p) {
+    setSearchName(p.name);
+    setRoom(p.room);
+    setIsNewPatient(false);
+    setShowSuggestions(false);
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -29,7 +71,7 @@ export default function ManualRoomEntry({ defaultRoom = "", onConfirm, onCancel 
 
         <form onSubmit={handleSubmit} className="mt-4">
           {/* Patient Name Input */}
-          <div className="mb-4">
+          <div className="relative mb-4" onClick={(e) => e.stopPropagation()}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Patient Name (optional)
             </label>
@@ -37,21 +79,38 @@ export default function ManualRoomEntry({ defaultRoom = "", onConfirm, onCancel 
               type="text"
               autoFocus
               value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
+              onChange={(e) => handleSearchNameChange(e.target.value)}
               placeholder="e.g., Sarah Johnson, Johnson"
               className="w-full text-lg border border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:outline-none"
             />
+            {showSuggestions && (
+              <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                {filteredPatients.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleSelectPatient(p)}
+                    className="flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-blue-50"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{p.name}</p>
+                      <p className="text-xs text-gray-500">Room {p.room} · Age {p.age}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Room Input */}
-          <div className="mb-4">
+          <div className="relative mb-4" onClick={(e) => e.stopPropagation()}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Room Number (optional)
             </label>
             <input
               type="text"
               value={room}
-              onChange={(e) => setRoom(e.target.value)}
+              onChange={(e) => handleRoomChange(e.target.value)}
               placeholder="e.g., 2A-208, 415"
               className="w-full text-lg border border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:outline-none"
             />

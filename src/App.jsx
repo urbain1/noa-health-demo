@@ -51,7 +51,7 @@ function App() {
     for (const patient of patients) {
       for (const task of patient.tasks) {
         if (task.status === "Delayed" && !dismissedTaskIds.includes(task.id)) {
-          delayed.push({ ...task, room: patient.room });
+          delayed.push({ ...task, patientName: patient.name, patientRoom: patient.room });
         }
       }
     }
@@ -87,11 +87,16 @@ function App() {
     setPatients((prev) =>
       prev.map((p) => ({
         ...p,
-        tasks: p.tasks.map((t) =>
-          t.id === taskId && t.status === "Pending"
-            ? { ...t, status: "Delayed" }
-            : t
-        ),
+        tasks: p.tasks.map((t) => {
+          if (t.id !== taskId) return t;
+          // Don't touch completed tasks
+          if (t.status === "Completed") return t;
+          // If task is still Pending after 15s, simulate department confirmation
+          if (t.status === "Pending") {
+            return { ...t, status: "Confirmed" };
+          }
+          return t;
+        }),
       }))
     );
   };
@@ -103,8 +108,8 @@ function App() {
       department: taskData.department,
       status: taskData.status || "Pending",
       priority: taskData.priority || "Routine",
-      timestamp: new Date().toISOString(),
       deadline: taskData.deadline || null,
+      timestamp: new Date().toISOString(),
     };
 
     let targetPatientId = null;
@@ -155,6 +160,25 @@ function App() {
     setTimeout(() => {
       simulateStatusChange(newTask.id);
     }, 15000);
+
+    // Stat tasks that aren't confirmed within 45 seconds become delayed
+    if (newTask.priority === "Stat") {
+      setTimeout(() => {
+        setPatients((prev) =>
+          prev.map((p) => ({
+            ...p,
+            tasks: p.tasks.map((t) => {
+              if (t.id !== newTask.id) return t;
+              // Only delay if still just Confirmed (not Completed)
+              if (t.status === "Confirmed") {
+                return { ...t, status: "Delayed" };
+              }
+              return t;
+            }),
+          }))
+        );
+      }, 45000);
+    }
 
     setShowVoice(false);
 

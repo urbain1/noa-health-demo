@@ -35,6 +35,21 @@ function parseTranscriptFallback(text) {
       ? "Urgent"
       : "Routine";
 
+  // Try to extract patient name (basic patterns)
+  let patientName = null;
+  const namePatterns = [
+    /\bfor\s+(?:patient\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/,
+    /\bpatient\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/,
+  ];
+  // Try on original text (not lowercased) to catch capitalized names
+  for (const pattern of namePatterns) {
+    const nameMatch = text.match(pattern);
+    if (nameMatch) {
+      patientName = nameMatch[1].trim();
+      break;
+    }
+  }
+
   // Deadline extraction (basic patterns)
   let deadline = null;
   const inHoursMatch = lower.match(/\bin\s+(\d+)\s+hours?\b/);
@@ -64,6 +79,7 @@ function parseTranscriptFallback(text) {
     status: "Pending",
     timestamp: new Date().toISOString(),
     priority,
+    patientName,
     deadline,
     room,
     ...(isDischarge && { isDischarge: true }),
@@ -403,6 +419,7 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
           defaultRoom={parsedTaskDraft?.room || ""}
           onConfirm={handleManualRoomConfirm}
           onCancel={handleDisambiguationCancel}
+          allPatients={allPatients}
         />
       )}
     </div>
