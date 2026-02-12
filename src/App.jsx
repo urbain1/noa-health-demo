@@ -738,6 +738,11 @@ function App() {
           patients={patients}
           onSwitchView={handleSwitchToMyPatients}
           onPatientClick={handleChargePatientClick}
+          delayedTasks={delayedTasks}
+          onGenerateHandoff={handleGenerateShiftHandoff}
+          onDischargePatient={(patient) => setSelectedPatientForDischarge(patient)}
+          onFollowUp={handleFollowUp}
+          onDismissAlert={dismissAlert}
         />
         {/* Keep alert visible on charge view */}
         {delayedTasks.length > 0 && (
@@ -843,6 +848,10 @@ function App() {
         onShowContacts={handleShowContacts}
         patientUpdateLoading={patientUpdateLoading}
         onSwitchToChargeView={handleSwitchToChargeView}
+        delayedTasks={delayedTasks}
+        onDischargePatient={(patient) => setSelectedPatientForDischarge(patient)}
+        onFollowUp={handleFollowUp}
+        onDismissAlert={dismissAlert}
       />
       {selectedPatientForDischarge && (
         <DischargeDialog

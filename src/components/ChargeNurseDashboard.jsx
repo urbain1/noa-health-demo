@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import TopRightMenu from "./TopRightMenu";
 
 function computeRiskScore(patient) {
   const now = Date.now();
@@ -36,7 +37,7 @@ function getRiskLevel(score) {
   return null;
 }
 
-export default function ChargeNurseDashboard({ patients, onSwitchView, onPatientClick }) {
+export default function ChargeNurseDashboard({ patients, onSwitchView, onPatientClick, delayedTasks, onGenerateHandoff, onDischargePatient, onFollowUp, onDismissAlert }) {
   const stats = useMemo(() => {
     const allTasks = patients.flatMap((p) => p.tasks || []);
     const allNotes = patients.flatMap((p) => p.comments || []);
@@ -112,13 +113,19 @@ export default function ChargeNurseDashboard({ patients, onSwitchView, onPatient
     <div className="flex min-h-screen flex-col bg-gray-100">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
-        <h1 className="font-display text-xl font-bold tracking-tight text-gray-900"><span className="text-blue-600">noa</span> unit overview</h1>
-        <button
-          onClick={onSwitchView}
-          className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 active:scale-[0.97]"
-        >
-          My Patients
-        </button>
+        <h1 className="text-xl font-bold text-black">noa</h1>
+        <div className="flex items-center gap-4">
+          <button onClick={onSwitchView} className="text-sm font-normal text-gray-400">My Patients</button>
+          <button className="text-sm font-semibold text-gray-900">Unit View</button>
+          <TopRightMenu
+            patients={patients}
+            delayedTasks={delayedTasks || []}
+            onGenerateHandoff={onGenerateHandoff}
+            onDischargePatient={onDischargePatient}
+            onFollowUp={onFollowUp}
+            onDismissAlert={onDismissAlert}
+          />
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-4 space-y-4">

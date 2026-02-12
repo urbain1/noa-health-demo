@@ -1,40 +1,23 @@
 import PatientCard from "./PatientCard";
+import TopRightMenu from "./TopRightMenu";
 
-export default function Dashboard({ patients, onVoiceClick, dismissedCount, onClearDismissed, onDischargeClick, onDeleteTask, onEditTask, onGenerateHandoff, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading, onSwitchToChargeView }) {
+export default function Dashboard({ patients, onVoiceClick, dismissedCount, onClearDismissed, onDischargeClick, onDeleteTask, onEditTask, onGenerateHandoff, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading, onSwitchToChargeView, delayedTasks, onDischargePatient, onFollowUp, onDismissAlert }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
-        <div className="flex gap-2">
-          <button
-            onClick={onGenerateHandoff}
-            disabled={handoffLoading}
-            className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {handoffLoading ? "Generating..." : "Handoff"}
-          </button>
-          <button
-            onClick={onSwitchToChargeView}
-            className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 active:scale-[0.97]"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-            </svg>
-            Unit View
-          </button>
-        </div>
-        <h1 className="font-display text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-          <span className="text-blue-600">noa</span> health
-        </h1>
-        <div className="flex w-28 justify-end">
-          {dismissedCount > 0 && (
-            <button
-              onClick={onClearDismissed}
-              className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors duration-150 hover:bg-gray-100"
-            >
-              Clear ({dismissedCount})
-            </button>
-          )}
+        <h1 className="text-xl font-bold text-black">noa</h1>
+        <div className="flex items-center gap-4">
+          <button className="text-sm font-semibold text-gray-900">My Patients</button>
+          <button onClick={onSwitchToChargeView} className="text-sm font-normal text-gray-400">Unit View</button>
+          <TopRightMenu
+            patients={patients}
+            delayedTasks={delayedTasks || []}
+            onGenerateHandoff={onGenerateHandoff}
+            onDischargePatient={onDischargePatient}
+            onFollowUp={onFollowUp}
+            onDismissAlert={onDismissAlert}
+          />
         </div>
       </header>
 
