@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TaskCard from "./TaskCard";
 import NoteCard from "./NoteCard";
 import { computeRiskScore, getRiskLevel } from "./ChargeNurseDashboard";
@@ -20,6 +20,73 @@ function showDischargeBadge(tasks) {
 export default function PatientCard({ patient, patientId, onDischargeClick, onDeleteTask, onEditTask, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading, onOpenVoiceCapture }) {
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [tasksExpanded, setTasksExpanded] = useState(false);
+
+  const [newTaskCount, setNewTaskCount] = useState(0);
+  const [newNoteCount, setNewNoteCount] = useState(0);
+  const [prevTaskCount, setPrevTaskCount] = useState(patient.tasks ? patient.tasks.length : 0);
+  const [prevNoteCount, setPrevNoteCount] = useState(patient.comments ? patient.comments.length : 0);
+  const [newTaskIds, setNewTaskIds] = useState(new Set());
+  const [newNoteIds, setNewNoteIds] = useState(new Set());
+
+  useEffect(() => {
+    const currentLen = patient.tasks ? patient.tasks.length : 0;
+    if (currentLen > prevTaskCount) {
+      const diff = currentLen - prevTaskCount;
+      const newIds = new Set(newTaskIds);
+      patient.tasks.slice(-diff).forEach(t => newIds.add(t.id));
+      setNewTaskIds(newIds);
+
+      if (!tasksExpanded) {
+        setNewTaskCount(prev => prev + diff);
+      } else {
+        setTimeout(() => {
+          setNewTaskIds(new Set());
+        }, 2000);
+      }
+    }
+    setPrevTaskCount(currentLen);
+  }, [patient.tasks?.length]);
+
+  useEffect(() => {
+    const currentLen = patient.comments ? patient.comments.length : 0;
+    if (currentLen > prevNoteCount) {
+      const diff = currentLen - prevNoteCount;
+      const newIds = new Set(newNoteIds);
+      patient.comments.slice(-diff).forEach(n => newIds.add(n.id));
+      setNewNoteIds(newIds);
+
+      if (!notesExpanded) {
+        setNewNoteCount(prev => prev + diff);
+      } else {
+        setTimeout(() => {
+          setNewNoteIds(new Set());
+        }, 2000);
+      }
+    }
+    setPrevNoteCount(currentLen);
+  }, [patient.comments?.length]);
+
+  const handleToggleTasks = () => {
+    const willOpen = !tasksExpanded;
+    setTasksExpanded(willOpen);
+    if (willOpen) {
+      setTimeout(() => {
+        setNewTaskCount(0);
+        setNewTaskIds(new Set());
+      }, 2000);
+    }
+  };
+
+  const handleToggleNotes = () => {
+    const willOpen = !notesExpanded;
+    setNotesExpanded(willOpen);
+    if (willOpen) {
+      setTimeout(() => {
+        setNewNoteCount(0);
+        setNewNoteIds(new Set());
+      }, 2000);
+    }
+  };
 
   const riskScore = computeRiskScore(patient);
   const riskLevel = getRiskLevel(riskScore);
@@ -63,7 +130,7 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setTasksExpanded(!tasksExpanded)}
+            onClick={handleToggleTasks}
             className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
           >
             <svg
@@ -74,7 +141,13 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            Tasks ({patient.tasks.length})
+            {newTaskCount > 0 ? (
+              <span>
+                Tasks ({patient.tasks.length - newTaskCount} <span className="text-red-500 font-semibold">+ {newTaskCount} new</span>)
+              </span>
+            ) : (
+              <span className="text-gray-600">Tasks ({patient.tasks.length})</span>
+            )}
           </button>
           <button
             type="button"
@@ -90,6 +163,7 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
               <TaskCard
                 key={task.id}
                 task={task}
+                isNew={newTaskIds.has(task.id)}
                 onEdit={() => onEditTask(task, patientId)}
                 onDelete={() => onDeleteTask(task, patientId)}
               />
@@ -104,7 +178,7 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setNotesExpanded(!notesExpanded)}
+            onClick={handleToggleNotes}
             className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
           >
             <svg
@@ -115,7 +189,13 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            Clinical Notes ({(patient.comments || []).length})
+            {newNoteCount > 0 ? (
+              <span>
+                Clinical Notes ({(patient.comments || []).length - newNoteCount} <span className="text-red-500 font-semibold">+ {newNoteCount} new</span>)
+              </span>
+            ) : (
+              <span className="text-gray-600">Clinical Notes ({(patient.comments || []).length})</span>
+            )}
           </button>
           <button
             type="button"
@@ -133,6 +213,7 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
               <NoteCard
                 key={note.id}
                 note={note}
+                isNew={newNoteIds.has(note.id)}
                 onEdit={() => onEditNote(note, patient.id)}
                 onDelete={() => onDeleteNote(note, patient.id)}
               />

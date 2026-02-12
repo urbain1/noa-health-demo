@@ -15,11 +15,11 @@ function getTimeElapsed(timestamp) {
   return `${days}d ago`;
 }
 
-export default function NoteCard({ note, onEdit, onDelete }) {
+export default function NoteCard({ note, isNew, onEdit, onDelete }) {
   const badgeClass = categoryStyles[note.category] || "bg-gray-100 text-gray-800";
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <div className={`flex items-start justify-between gap-3 rounded-lg border p-3 shadow-sm transition-shadow duration-200 hover:shadow-md ${isNew ? 'bg-blue-50 border-blue-200' : 'border-gray-200 bg-white'}`}>
       <div className="min-w-0 flex-1">
         <p className="text-sm text-gray-900">{note.text}</p>
         <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">

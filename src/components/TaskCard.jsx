@@ -63,12 +63,12 @@ function getDeadlineDisplay(deadline) {
   return { text, colorClass };
 }
 
-export default function TaskCard({ task, onEdit, onDelete }) {
+export default function TaskCard({ task, isNew, onEdit, onDelete }) {
   const badgeClass = statusStyles[task.status] || "bg-gray-100 text-gray-800";
   const deadlineInfo = getDeadlineDisplay(task.deadline);
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <div className={`flex items-start justify-between gap-3 rounded-lg border p-3 shadow-sm transition-shadow duration-200 hover:shadow-md ${isNew ? 'bg-blue-50 border-blue-200' : 'border-gray-200 bg-white'}`}>
       <div className="min-w-0 flex-1">
         <p className="font-medium text-gray-900 leading-snug">{task.description}</p>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
