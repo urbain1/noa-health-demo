@@ -19,6 +19,7 @@ function showDischargeBadge(tasks) {
 
 export default function PatientCard({ patient, patientId, onDischargeClick, onDeleteTask, onEditTask, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading }) {
   const [notesExpanded, setNotesExpanded] = useState((patient.comments || []).length > 0);
+  const [tasksExpanded, setTasksExpanded] = useState(false);
 
   const riskScore = computeRiskScore(patient);
   const riskLevel = getRiskLevel(riskScore);
@@ -57,15 +58,35 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
         </span>
       </div>
 
-      <div className="mt-3 flex flex-col gap-2">
-        {patient.tasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onEdit={() => onEditTask(task, patientId)}
-            onDelete={() => onDeleteTask(task, patientId)}
-          />
-        ))}
+      {/* Tasks Section - collapsible */}
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => setTasksExpanded(!tasksExpanded)}
+          className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg
+            className={`h-4 w-4 transition-transform duration-200 ${tasksExpanded ? "rotate-90" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          Tasks ({patient.tasks.length})
+        </button>
+        {tasksExpanded && (
+          <div className="mt-2 flex flex-col gap-2">
+            {patient.tasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onEdit={() => onEditTask(task, patientId)}
+                onDelete={() => onDeleteTask(task, patientId)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Clinical Notes Section */}
@@ -140,26 +161,6 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
         </button>
       </div>
 
-      {!hasDischargeTask(patient.tasks) && (
-        <button
-          onClick={() => onDischargeClick(patient.id)}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 shadow-sm transition-colors hover:bg-green-100 active:scale-[0.98]"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-green-600"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-          Mark for Discharge
-        </button>
-      )}
     </div>
   );
 }

@@ -70,6 +70,12 @@ export default function AddNoteDialog({ patientName, onCancel, onSave }) {
   }, [isRecording]);
 
   const handleSave = async () => {
+    // Stop recording if active
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setIsRecording(false);
+
     if (!finalInput) return;
     setIsProcessing(true);
     setError(null);

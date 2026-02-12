@@ -104,6 +104,12 @@ export default function TaskEditDialog({ task, patientId, onCancel, onUpdate, on
   }, [isRecording]);
 
   const handleApply = async () => {
+    // Stop recording if active
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setIsRecording(false);
+
     if (!finalCommand) return;
     setIsProcessing(true);
     try {

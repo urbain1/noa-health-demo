@@ -156,6 +156,12 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
   }, [isRecording]);
 
   const handleCreateTask = async () => {
+    // Stop recording if active
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setIsRecording(false);
+
     if (!transcript.trim()) {
       alert("Please record something first");
       return;
@@ -362,12 +368,29 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
           />
         </div>
 
-        {/* Create Task button */}
-        {transcript.trim() && (
+        {/* Create Task + Cancel buttons */}
+        <div className="flex w-full gap-2">
+          <button
+            onClick={() => {
+              if (recognitionRef.current) {
+                recognitionRef.current.stop();
+              }
+              setIsRecording(false);
+              setTranscript("");
+              onClose();
+            }}
+            className="bg-gray-100 text-gray-600 hover:bg-gray-200 px-4 py-2 rounded-lg"
+          >
+            Cancel
+          </button>
           <button
             onClick={handleCreateTask}
-            disabled={isProcessing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-none bg-blue-600 px-6 py-3.5 text-base font-semibold text-white shadow-md transition-all duration-200 hover:bg-blue-700 hover:shadow-lg active:scale-[0.98] active:bg-blue-800 disabled:opacity-60"
+            disabled={!transcript.trim() || isProcessing}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-none px-6 py-3.5 text-base font-semibold shadow-md transition-all duration-200 active:scale-[0.98] ${
+              transcript.trim()
+                ? "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                : "bg-blue-200 text-blue-400 cursor-not-allowed"
+            } disabled:opacity-60`}
           >
             {isProcessing ? (
               <>
@@ -397,7 +420,7 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
               "Create Task"
             )}
           </button>
-        )}
+        </div>
       </main>
 
       {showRoomDisambiguation && roomMatches && (
