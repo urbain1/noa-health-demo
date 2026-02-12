@@ -53,7 +53,7 @@ function App() {
         prev.map((p) => ({
           ...p,
           tasks: p.tasks.map((t) =>
-            (t.id === 201 || t.id === 303) && t.status === "Pending"
+            (t.id === 9001 || t.id === 9002) && t.status === "Pending"
               ? { ...t, status: "Delayed" }
               : t
           ),
@@ -348,7 +348,7 @@ function App() {
     setHandoffLoading(true);
     const result = await generateHandoffSummary(patients);
     if (result) {
-      setHandoffData({ summaryText: result, title: "Shift Handoff", patientCount: patients.length });
+      setHandoffData({ summaryText: result, title: "Shift Handoff Report", patientCount: patients.length });
       setShowHandoff(true);
     } else {
       alert("Failed to generate handoff summary. Please try again.");

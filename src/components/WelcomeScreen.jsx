@@ -9,7 +9,7 @@ export default function WelcomeScreen({ onStart }) {
 
         {/* Tagline */}
         <p className="mt-4 text-lg text-gray-600 leading-relaxed">
-          The AI teammate for nursing coordination.<br />
+          The AI coordination teammate for nurses.<br />
           Speak orders. Track tasks. Handoff safely.
         </p>
 

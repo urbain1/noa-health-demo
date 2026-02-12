@@ -18,7 +18,7 @@ function showDischargeBadge(tasks) {
 }
 
 export default function PatientCard({ patient, patientId, onDischargeClick, onDeleteTask, onEditTask, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading }) {
-  const [notesExpanded, setNotesExpanded] = useState((patient.comments || []).length > 0);
+  const [notesExpanded, setNotesExpanded] = useState(false);
   const [tasksExpanded, setTasksExpanded] = useState(false);
 
   const riskScore = computeRiskScore(patient);

@@ -47,7 +47,10 @@ export default function HandoffSummary({ summaryText, title, onClose, patientCou
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="font-display text-xl font-bold tracking-tight text-gray-900">{title}</h1>
+        <div>
+          <h1 className="font-display text-xl font-bold tracking-tight text-gray-900">{title}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">SBAR summary for shift change</p>
+        </div>
         <div className="flex-1" />
       </div>
 

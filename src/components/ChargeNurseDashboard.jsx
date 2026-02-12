@@ -115,8 +115,8 @@ export default function ChargeNurseDashboard({ patients, onSwitchView, onPatient
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <h1 className="text-xl font-bold text-black">noa</h1>
         <div className="flex items-center gap-4">
-          <button onClick={onSwitchView} className="text-sm font-normal text-gray-400">My Patients</button>
-          <button className="text-sm font-semibold text-gray-900">Unit View</button>
+          <button onClick={onSwitchView} className="px-3 py-1.5 rounded-lg text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100">My Patients</button>
+          <button className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white">Unit View</button>
           <TopRightMenu
             patients={patients}
             delayedTasks={delayedTasks || []}
