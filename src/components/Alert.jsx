@@ -49,7 +49,7 @@ export default function Alert({ task, onDismiss, onRepage, onEscalate, currentIn
           onClick={onDismiss}
           className="mt-1 w-full text-center text-xs text-gray-400 hover:text-gray-600 transition-colors"
         >
-          Dismiss
+          Close
         </button>
       </div>
     </div>

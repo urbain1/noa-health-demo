@@ -38,6 +38,7 @@ function App() {
   const [showContacts, setShowContacts] = useState(null); // patientId or null
   const [showChargeView, setShowChargeView] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [alertHidden, setAlertHidden] = useState(false);
   const [dismissedTaskIds, setDismissedTaskIds] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("dismissedTasks") || "[]");
@@ -745,12 +746,12 @@ function App() {
           onDismissAlert={dismissAlert}
         />
         {/* Keep alert visible on charge view */}
-        {delayedTasks.length > 0 && (
+        {delayedTasks.length > 0 && !alertHidden && (
           <Alert
             task={delayedTasks[0]}
             onRepage={handleRepageDepartment}
             onEscalate={handleEscalateToCharge}
-            onDismiss={() => dismissAlert(delayedTasks[0].id)}
+            onDismiss={() => setAlertHidden(true)}
             currentIndex={0}
             totalCount={delayedTasks.length}
           />
@@ -820,10 +821,10 @@ function App() {
 
   return (
     <>
-      {delayedTasks.length > 0 && !showVoice && (
+      {delayedTasks.length > 0 && !showVoice && !alertHidden && (
         <Alert
           task={delayedTasks[0]}
-          onDismiss={() => dismissAlert(delayedTasks[0].id)}
+          onDismiss={() => setAlertHidden(true)}
           onRepage={handleRepageDepartment}
           onEscalate={handleEscalateToCharge}
           currentIndex={0}
@@ -852,6 +853,7 @@ function App() {
         onDischargePatient={(patient) => setSelectedPatientForDischarge(patient)}
         onFollowUp={handleFollowUp}
         onDismissAlert={dismissAlert}
+        onOpenVoiceCapture={() => setShowVoice(true)}
       />
       {selectedPatientForDischarge && (
         <DischargeDialog

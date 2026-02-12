@@ -140,11 +140,11 @@ export default function TopRightMenu({ patients, delayedTasks, onGenerateHandoff
                       </button>
                       <button
                         onClick={() => {
-                          onDismissAlert(task.id);
+                          setShowBottomSheet(false);
                         }}
                         className="rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
                       >
-                        Dismiss
+                        Close
                       </button>
                     </div>
                   </div>

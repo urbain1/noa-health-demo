@@ -1,7 +1,7 @@
 import PatientCard from "./PatientCard";
 import TopRightMenu from "./TopRightMenu";
 
-export default function Dashboard({ patients, onVoiceClick, dismissedCount, onClearDismissed, onDischargeClick, onDeleteTask, onEditTask, onGenerateHandoff, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading, onSwitchToChargeView, delayedTasks, onDischargePatient, onFollowUp, onDismissAlert }) {
+export default function Dashboard({ patients, onVoiceClick, dismissedCount, onClearDismissed, onDischargeClick, onDeleteTask, onEditTask, onGenerateHandoff, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading, onSwitchToChargeView, delayedTasks, onDischargePatient, onFollowUp, onDismissAlert, onOpenVoiceCapture }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header */}
@@ -39,6 +39,7 @@ export default function Dashboard({ patients, onVoiceClick, dismissedCount, onCl
             onGeneratePatientUpdate={onGeneratePatientUpdate}
             onShowContacts={onShowContacts}
             patientUpdateLoading={patientUpdateLoading}
+            onOpenVoiceCapture={onOpenVoiceCapture}
           />
         ))}
       </main>

@@ -17,7 +17,7 @@ function showDischargeBadge(tasks) {
   });
 }
 
-export default function PatientCard({ patient, patientId, onDischargeClick, onDeleteTask, onEditTask, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading }) {
+export default function PatientCard({ patient, patientId, onDischargeClick, onDeleteTask, onEditTask, onPatientHandoff, handoffLoading, onAddNote, onEditNote, onDeleteNote, onGeneratePatientUpdate, onShowContacts, patientUpdateLoading, onOpenVoiceCapture }) {
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [tasksExpanded, setTasksExpanded] = useState(false);
 
@@ -60,21 +60,30 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
 
       {/* Tasks Section - collapsible */}
       <div className="mt-3">
-        <button
-          type="button"
-          onClick={() => setTasksExpanded(!tasksExpanded)}
-          className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <svg
-            className={`h-4 w-4 transition-transform duration-200 ${tasksExpanded ? "rotate-90" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setTasksExpanded(!tasksExpanded)}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-          Tasks ({patient.tasks.length})
-        </button>
+            <svg
+              className={`h-4 w-4 transition-transform duration-200 ${tasksExpanded ? "rotate-90" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            Tasks ({patient.tasks.length})
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenVoiceCapture(); }}
+            className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition-colors"
+          >
+            + Add Task
+          </button>
+        </div>
         {tasksExpanded && (
           <div className="mt-2 flex flex-col gap-2">
             {patient.tasks.map((task) => (
@@ -110,7 +119,7 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
           </button>
           <button
             type="button"
-            onClick={() => onAddNote(patient.id)}
+            onClick={(e) => { e.stopPropagation(); onAddNote(patient.id); }}
             className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition-colors"
           >
             + Add Note
