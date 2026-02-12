@@ -338,7 +338,7 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
             </svg>
           </button>
           <p className="text-sm font-medium text-gray-500">
-            {isRecording ? "Listening..." : "Tap to record"}
+            {isRecording ? "Listening..." : "Tap to record a new task"}
           </p>
         </div>
 
@@ -357,7 +357,7 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
           <textarea
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
-            placeholder="Your speech will appear here. Tap to edit before creating the task."
+            placeholder="Your speech will appear here. Tap to write or edit before creating a task."
             className="w-full min-h-[120px] p-4 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
           />
         </div>

@@ -17,7 +17,7 @@ export default function WelcomeScreen({ onStart }) {
         <div className="mt-8 rounded-xl border border-gray-200 bg-white px-6 py-5 shadow-sm">
           <p className="text-sm font-medium text-gray-500">Try it: tap the mic and say</p>
           <p className="mt-2 font-display text-base font-semibold text-gray-900">
-            &ldquo;Order a CBC stat for Sarah Johnson&rdquo;
+            &ldquo;Order a CBC stat for Sarah Johnson due tomorrow&rdquo;
           </p>
         </div>
 
@@ -34,7 +34,7 @@ export default function WelcomeScreen({ onStart }) {
           Demo with simulated data
         </p>
         <p className="mt-1 text-xs text-gray-400">
-          Built by Urbain Kwizera &middot; Founder &amp; CEO, Noa Health
+          Built by Noa Health
         </p>
       </div>
     </div>

@@ -46,6 +46,23 @@ function App() {
     }
   });
 
+  // Simulate delayed status on mock tasks after 30 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPatients((prev) =>
+        prev.map((p) => ({
+          ...p,
+          tasks: p.tasks.map((t) =>
+            (t.id === 201 || t.id === 303) && t.status === "Pending"
+              ? { ...t, status: "Delayed" }
+              : t
+          ),
+        }))
+      );
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const delayed = [];
     for (const patient of patients) {

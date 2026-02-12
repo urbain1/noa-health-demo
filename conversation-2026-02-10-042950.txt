@@ -1,0 +1,12 @@
+
+╭─── Claude Code v2.1.38 ──────────────────────────────────────────────────────╮
+│                           │ Tips for getting started                         │
+│    Welcome back Urbain!   │ Run /init to create a CLAUDE.md file with instr… │
+│                           │ ──────────────────────────────────────────────── │
+│         ▗ ▗   ▖ ▖         │ Recent activity                                  │
+│                           │ No recent activity                               │
+│           ▘▘ ▝▝           │                                                  │
+│                           │                                                  │
+│   Opus 4.6 · Claude Pro   │                                                  │
+│     ~/noa-health-demo     │                                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯

@@ -115,28 +115,30 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
         )}
       </div>
 
-      <button
-        onClick={() => onPatientHandoff(patient.id)}
-        disabled={handoffLoading}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-          <path fillRule="evenodd" d="M8 11a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3A.5.5 0 018 11zm0 2a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3A.5.5 0 018 13zm-1-5a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5A.5.5 0 017 8z" clipRule="evenodd" />
-        </svg>
-        {handoffLoading ? "Generating..." : "Handoff Summary"}
-      </button>
+      <div className="mt-3 flex flex-row gap-2">
+        <button
+          onClick={() => onPatientHandoff(patient.id)}
+          disabled={handoffLoading}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            <path fillRule="evenodd" d="M8 11a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3A.5.5 0 018 11zm0 2a.5.5 0 01.5-.5h3a.5.5 0 010 1h-3A.5.5 0 018 13zm-1-5a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5A.5.5 0 017 8z" clipRule="evenodd" />
+          </svg>
+          {handoffLoading ? "Generating..." : "SBAR Summary"}
+        </button>
 
-      <button
-        onClick={() => onGeneratePatientUpdate(patient.id)}
-        disabled={patientUpdateLoading}
-        className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-500" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" />
-        </svg>
-        {patientUpdateLoading ? "Generating..." : "Patient Update"}
-      </button>
+        <button
+          onClick={() => onGeneratePatientUpdate(patient.id)}
+          disabled={patientUpdateLoading}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-500" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" />
+          </svg>
+          {patientUpdateLoading ? "Generating..." : "Patient View"}
+        </button>
+      </div>
 
       {!hasDischargeTask(patient.tasks) && (
         <button
