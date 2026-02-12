@@ -21,50 +21,53 @@ export default function PatientCard({ patient, patientId, onDischargeClick, onDe
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [tasksExpanded, setTasksExpanded] = useState(false);
 
+  const [prevTaskIds, setPrevTaskIds] = useState(() => new Set(patient.tasks ? patient.tasks.map(t => t.id) : []));
   const [newTaskCount, setNewTaskCount] = useState(0);
-  const [newNoteCount, setNewNoteCount] = useState(0);
-  const [prevTaskCount, setPrevTaskCount] = useState(patient.tasks ? patient.tasks.length : 0);
-  const [prevNoteCount, setPrevNoteCount] = useState(patient.comments ? patient.comments.length : 0);
   const [newTaskIds, setNewTaskIds] = useState(new Set());
+
+  const [prevNoteIds, setPrevNoteIds] = useState(() => new Set(patient.comments ? patient.comments.map(n => n.id) : []));
+  const [newNoteCount, setNewNoteCount] = useState(0);
   const [newNoteIds, setNewNoteIds] = useState(new Set());
 
   useEffect(() => {
-    const currentLen = patient.tasks ? patient.tasks.length : 0;
-    if (currentLen > prevTaskCount) {
-      const diff = currentLen - prevTaskCount;
-      const newIds = new Set(newTaskIds);
-      patient.tasks.slice(-diff).forEach(t => newIds.add(t.id));
-      setNewTaskIds(newIds);
+    if (!patient.tasks) return;
+    const addedIds = patient.tasks.filter(t => !prevTaskIds.has(t.id)).map(t => t.id);
+
+    if (addedIds.length > 0) {
+      const updatedNewIds = new Set(newTaskIds);
+      addedIds.forEach(id => updatedNewIds.add(id));
+      setNewTaskIds(updatedNewIds);
 
       if (!tasksExpanded) {
-        setNewTaskCount(prev => prev + diff);
+        setNewTaskCount(prev => prev + addedIds.length);
       } else {
         setTimeout(() => {
           setNewTaskIds(new Set());
         }, 2000);
       }
     }
-    setPrevTaskCount(currentLen);
-  }, [patient.tasks?.length]);
+    setPrevTaskIds(new Set(patient.tasks.map(t => t.id)));
+  }, [patient.tasks]);
 
   useEffect(() => {
-    const currentLen = patient.comments ? patient.comments.length : 0;
-    if (currentLen > prevNoteCount) {
-      const diff = currentLen - prevNoteCount;
-      const newIds = new Set(newNoteIds);
-      patient.comments.slice(-diff).forEach(n => newIds.add(n.id));
-      setNewNoteIds(newIds);
+    if (!patient.comments) return;
+    const addedIds = patient.comments.filter(n => !prevNoteIds.has(n.id)).map(n => n.id);
+
+    if (addedIds.length > 0) {
+      const updatedNewIds = new Set(newNoteIds);
+      addedIds.forEach(id => updatedNewIds.add(id));
+      setNewNoteIds(updatedNewIds);
 
       if (!notesExpanded) {
-        setNewNoteCount(prev => prev + diff);
+        setNewNoteCount(prev => prev + addedIds.length);
       } else {
         setTimeout(() => {
           setNewNoteIds(new Set());
         }, 2000);
       }
     }
-    setPrevNoteCount(currentLen);
-  }, [patient.comments?.length]);
+    setPrevNoteIds(new Set(patient.comments.map(n => n.id)));
+  }, [patient.comments]);
 
   const handleToggleTasks = () => {
     const willOpen = !tasksExpanded;

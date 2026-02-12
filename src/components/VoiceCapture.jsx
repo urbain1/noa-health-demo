@@ -346,6 +346,9 @@ export default function VoiceCapture({ onClose, onTaskCreated, allPatients }) {
           <p className="text-sm font-medium text-gray-500">
             {isRecording ? "Listening..." : "Tap to record a new task"}
           </p>
+          <p className="text-sm text-gray-400 italic mt-2">
+            Try: &quot;Order a CBC stat for Maria Santos due tomorrow&quot;
+          </p>
         </div>
 
         {/* Error */}
